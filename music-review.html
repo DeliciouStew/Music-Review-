@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MusicReview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #f7f4ef;
+    --surface: #ffffff;
+    --surface2: #f0ece4;
+    --border: #e8e2d9;
+    --accent: #2d2d2d;
+    --accent-dim: rgba(45,45,45,0.08);
+    --text: #1a1a1a;
+    --text-muted: #9a9186;
+    --text-dim: #c4bdb4;
+    --tag: #ede9e2;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue', Arial, sans-serif; min-height: 100vh; }
+
+  #app-screen { display: block; }
+
+  .topbar {
+    position: sticky; top: 0;
+    background: rgba(247,244,239,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem; height: 58px;
+    display: flex; align-items: center; justify-content: space-between; z-index: 100;
+  }
+
+  .logo { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .tabs { display: flex; gap: 4px; background: var(--surface2); border-radius: 10px; padding: 3px; }
+  .tab-btn {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    padding: 5px 14px; border-radius: 7px; transition: all 0.18s;
+  }
+  .tab-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  .main { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .search-wrap { position: relative; margin-bottom: 2rem; }
+  .search-input {
+    width: 100%; background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 13px 110px 13px 18px; color: var(--text);
+    font-size: 14px; outline: none; transition: border-color 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-dim); }
+  .search-btn {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: var(--accent); border: none; border-radius: 9px;
+    padding: 7px 18px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .search-btn:hover { opacity: 0.8; }
+
+  .section-title { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
+
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 14px; }
+
+  .track-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 18px; overflow: hidden; cursor: pointer;
+    transition: all 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .track-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.09); }
+  .track-card-img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--surface2); }
+  .track-card-placeholder { width: 100%; aspect-ratio: 1; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 38px; }
+  .track-card-info { padding: 11px 13px; }
+  .track-card-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-card-artist { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(20,18,14,0.45); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 22px; padding: 2rem; width: 100%; max-width: 450px;
+    position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  }
+  .modal-close {
+    position: absolute; top: 14px; right: 14px;
+    background: var(--surface2); border: none; color: var(--text-muted);
+    width: 28px; height: 28px; border-radius: 50%; font-size: 12px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .modal-close:hover { background: var(--border); }
+
+  .modal-track { display: flex; gap: 14px; margin-bottom: 1.5rem; }
+  .modal-track-img { width: 76px; height: 76px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: var(--surface2); }
+  .modal-track-placeholder { width: 76px; height: 76px; border-radius: 12px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+  .modal-track-title { font-size: 15px; font-weight: 700; line-height: 1.3; margin-top: 4px; }
+  .modal-track-artist { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .modal-track-album { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+  .field-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+
+  .stars { display: flex; gap: 4px; margin-bottom: 1.25rem; }
+  .star { font-size: 26px; cursor: pointer; transition: transform 0.15s; filter: grayscale(1) opacity(0.2); }
+  .star.active { filter: none; transform: scale(1.1); }
+  .star:hover { transform: scale(1.2); }
+
+  .review-textarea {
+    width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 10px 14px; color: var(--text);
+    font-size: 13px; font-family: inherit; resize: none;
+    outline: none; height: 76px; transition: border-color 0.2s;
+  }
+  .review-textarea:focus { border-color: var(--accent); }
+  .review-textarea::placeholder { color: var(--text-dim); }
+
+  .modal-save {
+    width: 100%; margin-top: 1rem; background: var(--accent);
+    border: none; border-radius: 12px; padding: 12px; color: #fff;
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;
+  }
+  .modal-save:hover { opacity: 0.8; }
+
+  /* REVIEWS */
+  .reviews-list { display: flex; flex-direction: column; gap: 10px; }
+  .review-item {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 14px 16px;
+    display: flex; gap: 14px; align-items: flex-start;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  }
+  .review-item-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+  .review-item-placeholder { width: 50px; height: 50px; border-radius: 10px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .review-item-info { flex: 1; min-width: 0; }
+  .review-item-title { font-size: 14px; font-weight: 600; }
+  .review-item-artist { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .review-item-stars { font-size: 12px; margin-top: 4px; }
+  .review-item-comment { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+  .review-item-delete { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 13px; padding: 4px; border-radius: 6px; transition: color 0.2s; flex-shrink: 0; }
+  .review-item-delete:hover { color: #c0392b; }
+
+  .empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-dim); }
+  .empty-state .emoji { font-size: 40px; margin-bottom: 14px; }
+  .empty-state p { font-size: 14px; line-height: 1.7; color: var(--text-muted); }
+
+  .error-msg { background: #fff0ef; border: 1.5px solid #ffd4d0; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #c0392b; margin-bottom: 1rem; display: none; }
+  .loading { text-align: center; padding: 2.5rem; color: var(--text-muted); font-size: 13px; display: none; }
+</style>
+</head>
+<body>
+
+<div id="app-screen">
+  <div class="topbar">
+    <div class="logo">Music<span>Review</span></div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-search" onclick="switchTab('search')">검색</button>
+      <button class="tab-btn" id="tab-reviews" onclick="switchTab('reviews')">내 리뷰</button>
+    </div>
+  </div>
+  <div class="main">
+    <div id="search-tab">
+      <div class="search-wrap">
+        <input class="search-input" id="search-input" type="text" placeholder="곡 이름, 아티스트 검색..." onkeydown="if(event.key==='Enter')searchTracks()">
+        <button class="search-btn" onclick="searchTracks()">검색</button>
+      </div>
+      <div class="error-msg" id="error-msg"></div>
+      <div class="loading" id="loading">검색 중... 🎵</div>
+      <div id="results-container"></div>
+    </div>
+    <div id="reviews-tab" style="display:none;">
+      <div id="reviews-container"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-track">
+      <div id="modal-img-wrap"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="modal-track-title" id="modal-title"></div>
+        <div class="modal-track-artist" id="modal-artist"></div>
+        <div class="modal-track-album" id="modal-album"></div>
+      </div>
+    </div>
+    <div class="field-label">별점</div>
+    <div class="stars">
+      <span class="star" onclick="setRating(1)" onmouseover="hoverRating(1)" onmouseout="resetHover()">⭐</span>
+      <span class="star" onclick="setRating(2)" onmouseover="hoverRating(2)" onmouseout="resetHover()">⭐</span>
+      <span class="star" onclick="setRating(3)" onmouseover="hoverRating(3)" onmouseout="resetHover()">⭐</span>
+      <span class="star" onclick="setRating(4)" onmouseover="hoverRating(4)" onmouseout="resetHover()">⭐</span>
+      <span class="star" onclick="setRating(5)" onmouseover="hoverRating(5)" onmouseout="resetHover()">⭐</span>
+    </div>
+    <div class="field-label">한 마디</div>
+    <textarea class="review-textarea" id="review-text" placeholder="이 곡 어때? 자유롭게 써봐..."></textarea>
+    <button class="modal-save" onclick="saveReview()">리뷰 저장</button>
+  </div>
+</div>
+
+<script>
+var apiKey = 'bf2f28e3adb9e2cde732bdbaf21ba177';
+var currentTrack = null;
+var currentRating = 0;
+var reviews = [];
+
+function searchTracks() {
+  var query = document.getElementById('search-input').value.trim();
+  if (!query) return;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('results-container').innerHTML = '';
+  document.getElementById('error-msg').style.display = 'none';
+
+  var url = 'https://ws.audioscrobbler.com/2.0/?method=track.search&track='
+    + encodeURIComponent(query) + '&api_key=' + apiKey + '&format=json&limit=12';
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      document.getElementById('loading').style.display = 'none';
+      if (data.error) { showError('API 오류: ' + data.message); return; }
+      var tracks = data.results && data.results.trackmatches && data.results.trackmatches.track;
+      if (!tracks || tracks.length === 0) {
+        document.getElementById('results-container').innerHTML = '<div class="empty-state"><div class="emoji">🔍</div><p>결과 없어!<br>다른 검색어 써봐</p></div>';
+        return;
+      }
+      if (!Array.isArray(tracks)) tracks = [tracks];
+      fetchAlbumArts(tracks);
+    })
+    .catch(function() {
+      document.getElementById('loading').style.display = 'none';
+      showError('검색 실패!');
+    });
+}
+
+function fetchAlbumArts(tracks) {
+  var enriched = tracks.map(function(t) {
+    return { name: t.name, artist: t.artist, album: '', img: '' };
+  });
+  var promises = enriched.map(function(t, i) {
+    var url = 'https://ws.audioscrobbler.com/2.0/?method=track.getInfo&track='
+      + encodeURIComponent(t.name) + '&artist=' + encodeURIComponent(t.artist)
+      + '&api_key=' + apiKey + '&format=json';
+    return fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.track) {
+        enriched[i].album = (data.track.album && data.track.album.title) || '';
+        if (data.track.album && data.track.album.image) {
+          var imgs = data.track.album.image;
+          for (var j = imgs.length - 1; j >= 0; j--) {
+            if (imgs[j]['#text'] && imgs[j]['#text'] !== '') { enriched[i].img = imgs[j]['#text']; break; }
+          }
+        }
+      }
+    }).catch(function() {});
+  });
+  Promise.all(promises).then(function() { renderResults(enriched); });
+}
+
+function renderResults(tracks) {
+  var container = document.getElementById('results-container');
+  var html = '<div class="section-title">검색 결과 ' + tracks.length + '개</div><div class="results-grid">';
+  tracks.forEach(function(track) {
+    var td = JSON.stringify(track).replace(/"/g, '&quot;');
+    html += '<div class="track-card" onclick=\'openModal(' + td + ')\'>';
+    if (track.img) {
+      html += '<img class="track-card-img" src="' + esc(track.img) + '" alt="">';
+    } else {
+      html += '<div class="track-card-placeholder">🎵</div>';
+    }
+    html += '<div class="track-card-info"><div class="track-card-title">' + esc(track.name) + '</div>';
+    html += '<div class="track-card-artist">' + esc(track.artist) + '</div></div></div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function openModal(track) {
+  currentTrack = track; currentRating = 0;
+  document.getElementById('modal-title').textContent = track.name;
+  document.getElementById('modal-artist').textContent = track.artist;
+  document.getElementById('modal-album').textContent = track.album || '';
+  document.getElementById('review-text').value = '';
+  var wrap = document.getElementById('modal-img-wrap');
+  if (track.img) {
+    wrap.innerHTML = '<img class="modal-track-img" src="' + esc(track.img) + '" alt="">';
+  } else {
+    wrap.innerHTML = '<div class="modal-track-placeholder">🎵</div>';
+  }
+  updateStars(0);
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); currentTrack = null; }
+function setRating(n) { currentRating = n; updateStars(n); }
+function hoverRating(n) { updateStars(n); }
+function resetHover() { updateStars(currentRating); }
+function updateStars(n) {
+  var stars = document.querySelectorAll('.star');
+  stars.forEach(function(s, i) { if (i < n) s.classList.add('active'); else s.classList.remove('active'); });
+}
+
+function saveReview() {
+  if (!currentTrack) return;
+  if (currentRating === 0) { alert('별점을 선택해줘!'); return; }
+  var review = {
+    key: currentTrack.name + '|' + currentTrack.artist,
+    name: currentTrack.name, artist: currentTrack.artist,
+    album: currentTrack.album, img: currentTrack.img,
+    rating: currentRating, comment: document.getElementById('review-text').value.trim(),
+    date: new Date().toLocaleDateString('ko-KR')
+  };
+  var idx = reviews.findIndex(function(r) { return r.key === review.key; });
+  if (idx >= 0) reviews[idx] = review; else reviews.unshift(review);
+  closeModal(); switchTab('reviews');
+}
+
+function renderReviews() {
+  var container = document.getElementById('reviews-container');
+  if (reviews.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="emoji">🎵</div><p>아직 리뷰한 곡이 없어!<br>검색해서 첫 리뷰를 남겨봐</p></div>';
+    return;
+  }
+  var html = '<div class="section-title">' + reviews.length + '개의 리뷰</div><div class="reviews-list">';
+  reviews.forEach(function(r, i) {
+    var stars = '';
+    for (var s = 1; s <= 5; s++) stars += s <= r.rating ? '⭐' : '☆';
+    html += '<div class="review-item">';
+    if (r.img) { html += '<img class="review-item-img" src="' + esc(r.img) + '" alt="">'; }
+    else { html += '<div class="review-item-placeholder">🎵</div>'; }
+    html += '<div class="review-item-info"><div class="review-item-title">' + esc(r.name) + '</div>';
+    html += '<div class="review-item-artist">' + esc(r.artist) + '</div>';
+    html += '<div class="review-item-stars">' + stars + '</div>';
+    if (r.comment) html += '<div class="review-item-comment">"' + esc(r.comment) + '"</div>';
+    html += '</div><button class="review-item-delete" onclick="deleteReview(' + i + ')">✕</button></div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function deleteReview(i) {
+  if (confirm('이 리뷰 삭제할까?')) { reviews.splice(i, 1); renderReviews(); }
+}
+
+function switchTab(tab) {
+  document.getElementById('search-tab').style.display = tab === 'search' ? 'block' : 'none';
+  document.getElementById('reviews-tab').style.display = tab === 'reviews' ? 'block' : 'none';
+  document.getElementById('tab-search').classList.toggle('active', tab === 'search');
+  document.getElementById('tab-reviews').classList.toggle('active', tab === 'reviews');
+  if (tab === 'reviews') renderReviews();
+}
+
+function showError(msg) { var el = document.getElementById('error-msg'); el.textContent = msg; el.style.display = 'block'; }
+function esc(str) { if (!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
