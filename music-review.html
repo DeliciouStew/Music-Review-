@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MusicReview</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTXVzaWNSZXZpZXciLCJzaG9ydF9uYW1lIjoiTXVzaWNSZXZpZXciLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2Y3ZjRlZiIsInRoZW1lX2NvbG9yIjoiIzJkMmQyZCIsImljb25zIjpbeyJzcmMiOiIvaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9LHsic3JjIjoiL2ljb24tNTEyLnBuZyIsInNpemVzIjoiNTEyeDUxMiIsInR5cGUiOiJpbWFnZS9wbmcifV19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MusicReview">
+<meta name="theme-color" content="#f7f4ef">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
@@ -204,7 +211,7 @@
 var apiKey = 'bf2f28e3adb9e2cde732bdbaf21ba177';
 var currentTrack = null;
 var currentRating = 0;
-var reviews = [];
+var reviews = JSON.parse(localStorage.getItem('musicReviews') || '[]');
 
 function searchTracks() {
   var query = document.getElementById('search-input').value.trim();
@@ -313,7 +320,9 @@ function saveReview() {
   };
   var idx = reviews.findIndex(function(r) { return r.key === review.key; });
   if (idx >= 0) reviews[idx] = review; else reviews.unshift(review);
-  closeModal(); switchTab('reviews');
+  closeModal();
+  localStorage.setItem('musicReviews', JSON.stringify(reviews));
+  switchTab('reviews');
 }
 
 function renderReviews() {
@@ -340,7 +349,7 @@ function renderReviews() {
 }
 
 function deleteReview(i) {
-  if (confirm('이 리뷰 삭제할까?')) { reviews.splice(i, 1); renderReviews(); }
+  if (confirm('이 리뷰 삭제할까?')) { reviews.splice(i, 1); localStorage.setItem('musicReviews', JSON.stringify(reviews)); renderReviews(); }
 }
 
 function switchTab(tab) {
